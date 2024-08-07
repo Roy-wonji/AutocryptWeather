@@ -9,5 +9,7 @@ import Foundation
 
 public enum ImageAsset: String {
     
+    //MARK: - backGroud
+    case bgClear
     case empty
 }

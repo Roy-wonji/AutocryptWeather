@@ -2,6 +2,7 @@ import Foundation
 import ProjectDescription
 import DependencyPlugin
 import ProjectTemplatePlugin
+import DependencyPackagePlugin
 
 let project = Project.makeAppModule(
     name: "Utill",
@@ -9,7 +10,7 @@ let project = Project.makeAppModule(
     product: .staticFramework,
     settings:  .settings(),
     dependencies: [
-        
+        .SPM.composableArchitecture
     ],
     sources: ["Sources/**"]
 )
