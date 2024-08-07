@@ -141,10 +141,10 @@ public struct InfoPlistValues {
         return ["UISupportedInterfaceOrientations": .array(value.map { .string($0) })]
     }
     
-    public static func setNSCameraUsageDescription(_ value: String) -> [String: Plist.Value] {
-        return ["NSCameraUsageDescription": .string(value)]
+    public static func setNSLocationUsageDescription(_ value: String) -> [String: Plist.Value] {
+        return ["NSLocationWhenInUseUsageDescription": .string(value)]
     }
-    
+//    Privacy - Location When In Use Usage Description
     public static func setUILaunchScreens() -> [String: Plist.Value] {
         return [
             "UILaunchScreens": .dictionary([
@@ -194,6 +194,7 @@ public struct InfoPlistValues {
         infoPlist.merge(setUIRequiredDeviceCapabilities(["armv7"])) { (_, new) in new }
         infoPlist.merge(setUISupportedInterfaceOrientations(["UIInterfaceOrientationPortrait"])) { (_, new) in new }
         infoPlist.merge(setUILaunchScreens()) { (_, new) in new }
+        infoPlist.merge(setNSLocationUsageDescription("날씨에 대한 서비스를 제공하기 위해 위치 정보가 필요합니다.")) { (_, new) in new }
 
         return infoPlist
     }
