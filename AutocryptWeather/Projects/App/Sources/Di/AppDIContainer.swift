@@ -24,21 +24,21 @@ public final class AppDIContainer {
 
     // MARK: - Use Cases
     private func registerUseCases() async {
-//        await registerAuthUseCase()
+        await registerWeatherUseCase()
 //        await registerSignUpUseCase()
 
 //        await registerQrCodeUseCase()
     }
 
-//    private func registerAuthUseCase() async {
-//        await diContainer.register(AuthUseCaseProtocol.self) {
-//            guard let repository = self.diContainer.resolve(AuthRepositoryProtocol.self) else {
-//                assertionFailure("AuthRepositoryProtocol must be registered before registering AuthUseCaseProtocol")
-//                return AuthUseCase(repository: DefaultAuthRepository())
-//            }
-//            return AuthUseCase(repository: repository)
-//        }
-//    }
+    private func registerWeatherUseCase() async {
+        await diContainer.register(WeatherUseCaseProtocol.self) {
+            guard let repository = self.diContainer.resolve(WeatherRepositoryProtocol.self) else {
+                assertionFailure("AuthRepositoryProtocol must be registered before registering AuthUseCaseProtocol")
+                return WeatherUseCase(repository: DefaultWeatherRepository())
+            }
+            return WeatherUseCase(repository: repository)
+        }
+    }
     
 //    private func registerSignUpUseCase() async {
 //        await diContainer.register(SignUpUseCaseProtocol.self) {
@@ -53,16 +53,15 @@ public final class AppDIContainer {
 
     // MARK: - Repositories Registration
     private func registerRepositories() async {
-//        await registerAuthRepositories()
-//        await registerSignUpRepositories()
+        await registerWeatherRepositories()
 
     }
 
-//    private func registerAuthRepositories() async {
-//        await diContainer.register(AuthRepositoryProtocol.self) {
-//            AuthRepository()
-//        }
-//    }
+    private func registerWeatherRepositories() async {
+        await diContainer.register(WeatherRepositoryProtocol.self) {
+            WeatherRepository()
+        }
+    }
 //    
 //    private func registerSignUpRepositories() async {
 //        await diContainer.register(SignUpRepositoryProtocol.self) {
