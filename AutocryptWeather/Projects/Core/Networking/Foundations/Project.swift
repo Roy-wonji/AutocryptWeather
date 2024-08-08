@@ -11,6 +11,7 @@ let project = Project.makeAppModule(
     dependencies: [
         .sdk(name: "OSLog", type: .framework),
         .Networking(implements: .ThirdPartys),
+        .Networking(implements: .API)
     ],
     sources: ["Sources/**"]
 )
