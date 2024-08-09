@@ -12,4 +12,7 @@ public enum ImageAsset: String {
     //MARK: - backGroud
     case bgClear
     case empty
+    
+    //MARK: - 날씨 이미지
+    
 }
