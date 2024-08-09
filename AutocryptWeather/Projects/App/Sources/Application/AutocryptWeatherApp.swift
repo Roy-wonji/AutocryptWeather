@@ -1,12 +1,14 @@
 import SwiftUI
 import ComposableArchitecture
 import Presentation
+import Foundations
 
 @main
 struct AutocryptWeatherApp: App {
     
     public init() {
         registerDependencies()
+        LocationManger.shared.checkAuthorizationStatus(completion: {}, locationStatustOff: {})
     }
     
     var body: some Scene {
