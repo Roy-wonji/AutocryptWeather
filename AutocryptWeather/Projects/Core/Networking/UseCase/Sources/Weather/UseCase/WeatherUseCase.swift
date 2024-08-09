@@ -10,7 +10,6 @@ import Foundation
 import DiContainer
 import Model
 
-
 import ComposableArchitecture
 
 public struct WeatherUseCase: WeatherUseCaseProtocol {

@@ -43,7 +43,7 @@ extension WeatherService: BaseTargetType {
                 "lang": "KR",
                 "units": "metric"
                 ]
-            return .requestParameters(parameters: parameters, encoding: JSONEncoding.default)
+            return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
         }
     }
 }
