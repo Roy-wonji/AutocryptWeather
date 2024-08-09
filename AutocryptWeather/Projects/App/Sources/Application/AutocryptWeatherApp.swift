@@ -20,8 +20,10 @@ struct AutocryptWeatherApp: App {
         WindowGroup {
             HomeView(store: store)
                 .onAppear {
-                    store.send(.async(.fetchWeather(latitude: LocationManger.currentLocation?.latitude ?? .zero,
-                                                    longitude: LocationManger.currentLocation?.longitude ?? .zero)))
+                    store.send(.async(.fetchWeather(
+                        latitude: LocationManger.currentLocation?.latitude ?? .zero,
+                        longitude: LocationManger.currentLocation?.longitude ?? .zero
+                    )))
                 }
             
         }

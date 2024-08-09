@@ -10,10 +10,15 @@ import SwiftUI
 import ComposableArchitecture
 import DesignSystem
 import Utill
+import MapKit
 
 public struct HomeView : View {
     @Bindable var store: StoreOf<Home>
     @Environment(\.scenePhase) var scenePhase
+    @State private var region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude:  LocationManger.shared.manager.location?.coordinate.latitude ?? .zero, longitude:  LocationManger.shared.manager.location?.coordinate.longitude ?? .zero),
+        span: MKCoordinateSpan(latitudeDelta: 5  , longitudeDelta: 5)
+    )
     
     public init(store: StoreOf<Home>) {
         self.store = store
@@ -42,6 +47,33 @@ public struct HomeView : View {
                     
                     DailyWeatherView(store: store)
                     
+                    Spacer()
+                        .frame(height: 20)
+                    
+                    WeatherMapView(store: store, region: $region, rainText: (store.weatherModel?.daily?.first?.pop ?? .zero).formatToOneDecimalPlace((store.weatherModel?.daily?.first?.pop ?? .zero)))
+                    
+                    Spacer()
+                        .frame(height: 20)
+                    
+                    HStack {
+                        homeTempletView(title: "습도", detailData: "\(store.weatherModel?.current?.humidity ?? .zero)%", isWindSpeed: false, windSpeed: "")
+                        
+                        Spacer()
+                        
+                        homeTempletView(title: "구름", detailData:  "\(store.weatherModel?.current?.clouds ?? .zero)%"  , isWindSpeed: false, windSpeed: "")
+                        
+                    }
+                    .padding(.horizontal, 20)
+                    
+                    HStack {
+                        homeTempletView(title: "바람 속도", detailData: "\(store.weatherModel?.current?.windSpeed ?? .zero)%", isWindSpeed: true, windSpeed: "\(store.weatherModel?.current?.windGust ?? .zero)%")
+                        
+                        Spacer()
+                        
+                        homeTempletView(title: "기압", detailData:  "\(store.weatherModel?.current?.pressure ?? .zero) hPa"  , isWindSpeed: false, windSpeed: "")
+                        
+                    }
+                    .padding(.horizontal, 20)
                     
                     Spacer()
                         .frame(height: 50)
@@ -126,6 +158,69 @@ extension HomeView {
                     .pretendardFont(family: .Regular, size: 20)
                     
             }
+        }
+    }
+    
+    @ViewBuilder
+    private func homeTempletView(
+        title: String,
+        detailData: String,
+        isWindSpeed: Bool,
+        windSpeed: String
+    ) -> some View{
+        VStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 160, height: 160)
+                .overlay {
+                    VStack {
+                        Spacer()
+                            .frame(height: 10)
+                        
+                        HStack {
+                            
+                            Text(title)
+                                .pretendardFont(family: .Regular, size: 14)
+                                .foregroundStyle(Color.basicWhite)
+                                .opacity(0.8)
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        Spacer()
+                        
+                        HStack {
+                            Text(detailData)
+                                .pretendardFont(family: .SemiBold, size: 25)
+                                .foregroundColor(Color.basicWhite)
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        
+                        Spacer()
+                        
+                        if isWindSpeed {
+                            HStack {
+                                Text("강풍 : \(windSpeed) m/s")
+                                    .pretendardFont(family: .SemiBold, size: 14)
+                                    .foregroundColor(Color.basicWhite)
+                                
+                                
+                                Spacer()
+                            }.padding(.horizontal, 20)
+                            
+                            Spacer()
+                                .frame(height: 20)
+                            
+                        } else {
+                            Spacer()
+                        }
+                        
+                    }
+                }
         }
     }
     

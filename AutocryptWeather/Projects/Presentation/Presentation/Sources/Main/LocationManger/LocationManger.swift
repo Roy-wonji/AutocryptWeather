@@ -11,6 +11,7 @@ import Foundations
 import UseCase
 import ComposableArchitecture
 
+
 public class LocationManger: NSObject, CLLocationManagerDelegate {
     public static let shared = LocationManger()
       var manager = CLLocationManager()
