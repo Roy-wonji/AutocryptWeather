@@ -5,25 +5,25 @@ import Foundations
 
 @main
 struct AutocryptWeatherApp: App {
-    
+    var store = Store(initialState: Home.State()) {
+        Home()
+            ._printChanges()
+            ._printChanges(.actionLabels)
+    }
+    var locationManger = LocationManger()
     public init() {
         registerDependencies()
-        LocationManger.shared.checkAuthorizationStatus(completion: {}, locationStatustOff: {})
+        LocationManger.shared.checkAuthorizationStatus()
     }
     
     var body: some Scene {
         WindowGroup {
-            HomeView(
-                store:
-                    Store(
-                        initialState: Home.State(),
-                        reducer: {
-                            Home()
-                                ._printChanges()
-                                ._printChanges(.actionLabels)
-                        }
-                    )
-            )
+            HomeView(store: store)
+                .onAppear {
+                    store.send(.async(.fetchWeather(latitude: LocationManger.currentLocation?.latitude ?? .zero,
+                                                    longitude: LocationManger.currentLocation?.longitude ?? .zero)))
+                }
+            
         }
     }
 }

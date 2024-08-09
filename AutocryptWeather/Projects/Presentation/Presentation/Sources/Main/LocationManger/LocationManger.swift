@@ -13,12 +13,12 @@ import ComposableArchitecture
 
 public class LocationManger: NSObject, CLLocationManagerDelegate {
     public static let shared = LocationManger()
-     var manager = CLLocationManager()
-     var currentLocation: CLLocationCoordinate2D?
+      var manager = CLLocationManager()
+    public static var currentLocation: CLLocationCoordinate2D?
    
     
     
-    override init() {
+    override public init() {
         super.init()
         
         manager.delegate = self
@@ -33,7 +33,7 @@ public class LocationManger: NSObject, CLLocationManagerDelegate {
             print("위치 업데이트!")
             print("위도 : \(location.coordinate.latitude)")
             print("경도 : \(location.coordinate.longitude)")
-            currentLocation = location.coordinate
+            LocationManger.currentLocation = location.coordinate
 
 
         }
@@ -44,25 +44,22 @@ public class LocationManger: NSObject, CLLocationManagerDelegate {
     }
     
     public func getLocation() -> CLLocationCoordinate2D? {
-        return currentLocation
+        return LocationManger.currentLocation
     }
 
-    public func checkAuthorizationStatus(completion: @escaping() -> Void, locationStatustOff: @escaping() -> Void) {
+    public func checkAuthorizationStatus() {
 
         if #available(iOS 14.0, *) {
 
             if manager.authorizationStatus == .authorizedAlways
                 || manager.authorizationStatus == .authorizedWhenInUse {
                 Log.debug("==> 위치 서비스 On 상태")
-                completion()
                 manager.startUpdatingLocation()
             } else if manager.authorizationStatus == .notDetermined {
                 Log.debug("==> 위치 서비스 Off 상태")
                 manager.requestWhenInUseAuthorization()
-                locationStatustOff()
             } else if manager.authorizationStatus == .denied {
                 Log.debug("==> 위치 서비스 Deny 상태")
-                locationStatustOff()
             }
 
         } else {
@@ -70,11 +67,9 @@ public class LocationManger: NSObject, CLLocationManagerDelegate {
                 Log.debug("위치 서비스 On 상태")
                 manager.startUpdatingLocation()
                 Log.debug("LocationSerivece >> checkPermission() - \(manager.location?.coordinate)")
-                completion()
             } else {
                 Log.debug("위치 서비스 Off 상태")
                 manager.requestWhenInUseAuthorization()
-                locationStatustOff()
             }
 
         }

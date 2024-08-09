@@ -14,8 +14,6 @@ public struct DailyWeatherItem: Identifiable, Equatable {
     public var currentTemp: String
     public var minTemp: Double
     public var maxTemp: Double
-    public var lowestTemp: Double
-    public var highestTemp: Double
     
     public init(
         id: UUID,
@@ -23,9 +21,7 @@ public struct DailyWeatherItem: Identifiable, Equatable {
         weatherImageName: String,
         currentTemp: String,
         minTemp: Double,
-        maxTemp: Double,
-        lowestTemp: Double,
-        highestTemp: Double
+        maxTemp: Double
     ) {
         self.id = id
         self.timeText = timeText
@@ -33,7 +29,5 @@ public struct DailyWeatherItem: Identifiable, Equatable {
         self.currentTemp = currentTemp
         self.minTemp = minTemp
         self.maxTemp = maxTemp
-        self.lowestTemp = lowestTemp
-        self.highestTemp = highestTemp
     }
 }

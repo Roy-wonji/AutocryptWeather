@@ -43,6 +43,8 @@ public struct WeatherResponseModel: Codable, Equatable {
         self.hourly = hourly
         self.daily = daily
     }
+    
+    
 }
 
 

@@ -21,7 +21,7 @@ public struct DailyWeatherView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.gray.opacity(0.3))
-                .frame(height: UIScreen.screenHeight * 0.6)
+                .frame(height: UIScreen.screenHeight * 0.34)
                 .padding(.horizontal, 20)
                 .overlay {
                     VStack(alignment: .leading) {
@@ -44,23 +44,12 @@ public struct DailyWeatherView: View {
                         
                         Divider()
                             .background(.white)
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, 40)
                         
                         ForEach(store.dailyWeatherViewItem) { item in
                             
                             DailyWeatherInfoView(
-                                dailyWeatherItem: item,
-                                geoWidth: calculateWidth(
-                                    maxTemp: item.maxTemp,
-                                    highestTemp: item.highestTemp,
-                                    minTemp: item.minTemp,
-                                    lowestTemp: item.lowestTemp
-                                ),
-                                geoOffset: calculateOffset(
-                                    minTemp: item.minTemp,
-                                    lowestTemp: item.lowestTemp,
-                                    highestTemp: item.highestTemp
-                                )
+                                dailyWeatherItem: item
                             )
                             .padding(.horizontal, 20)
                         }
@@ -76,27 +65,6 @@ public struct DailyWeatherView: View {
 
 
 extension DailyWeatherView {
-    func calculateWidth(
-           maxTemp: Double,
-           highestTemp: Double,
-           minTemp: Double,
-           lowestTemp: Double
-       ) -> CGFloat {
-           guard maxTemp != minTemp else {
-               return 10
-           }
-           let overall = abs(highestTemp) + abs(lowestTemp)
-           let gap = (abs(highestTemp) - abs(maxTemp)) + (abs(lowestTemp) - abs(minTemp))
-           return 100 * (abs(overall) - abs(gap)) / overall
-       }
     
-    func calculateOffset(
-            minTemp: Double,
-            lowestTemp: Double,
-            highestTemp: Double
-        ) -> CGFloat {
-            let overall = abs(highestTemp) + abs(lowestTemp)
-            let gap = abs(abs(lowestTemp) - abs(minTemp))
-            return 100 * gap / overall
-        }
+    
 }

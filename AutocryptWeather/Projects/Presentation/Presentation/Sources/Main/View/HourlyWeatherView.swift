@@ -40,7 +40,7 @@ struct HourlyWeatherView: View {
                         
                         Divider()
                             .background(.white)
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, 40)
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             LazyHStack {
@@ -65,17 +65,13 @@ struct HourlyWeatherView: View {
                                 .padding(.horizontal, 20)
                             }
                         }
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 20)
                     }
                 }
             
         }
-        
-        
-        
         .onAppear {
-            print(date)
-            store.send(.async(.filterDailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero, date: date)))
+            store.send(.async(.filterDailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
         }
     }
 }

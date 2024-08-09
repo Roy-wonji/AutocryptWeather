@@ -7,14 +7,10 @@
 
 import SwiftUI
 import Model
-
+import DesignSystem
 
  struct DailyWeatherInfoView: View {
      @State var dailyWeatherItem: DailyWeatherItem
-    @State var geoWidth: CGFloat
-    @State var geoOffset: CGFloat
-    
-     
      
     var body: some View {
         ZStack {
@@ -24,67 +20,50 @@ import Model
             
             HStack {
                 Text(dailyWeatherItem.timeText)
-                    .font(.system(size: 24))
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .pretendardFont(family: .SemiBold, size: 20)
+                    .foregroundStyle(Color.basicWhite)
                 
                 Image(assetName: dailyWeatherItem.weatherImageName)
                     .resizable()
+                    .scaledToFit()
                     .frame(width: 32, height: 32)
                 
                 
                 Spacer()
-                    .frame(width: 30)
+                 
                 
                 
-                HStack(spacing: 8) {
-                    Text("\(Int(dailyWeatherItem.minTemp))º")
-                        .font(.system(size: 22))
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .opacity(0.4)
+                HStack {
+                    Text("최소: ")
+                        .pretendardFont(family: .SemiBold, size: 18)
+                        .foregroundStyle(Color.basicWhite)
                     
                     Spacer()
                         .frame(width: 5)
                     
-                    HStack {
-                        Capsule()
-                            .foregroundColor(.black)
-                            .opacity(0.1)
-                            .overlay {
-                                GeometryReader { proxy in
-                                    Capsule()
-                                        .fill(.linearGradient(
-                                            Gradient(colors: [.blue, .green, .yellow]),
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        ))
-                                        .frame(width: geoWidth)
-                                        .offset(x: geoOffset)
-                                }
-                            }
-                        
-                        Circle()
-                            .foregroundColor(.white)
-                            .overlay(Circle()
-                                .stroke(lineWidth: 3)
-                                .foregroundColor(.black).opacity(0.2)
-                            )
-                            .frame(width: 5, height: 5)
-                            .offset(x: -15)         /// 현재 온도 표시(offset x 위치 조정)
-                    }
-                    .frame(height: 5)
+                    Text("\(Int(dailyWeatherItem.minTemp))º")
+                        .pretendardFont(family: .Regular, size: 18)
+                        .foregroundStyle(Color.basicWhite)
+                        .opacity(0.7)
+                    
+                    Spacer()
+                        .frame(width: 10)
+                    
+                    Text("최대: ")
+                        .pretendardFont(family: .SemiBold, size: 18)
+                        .foregroundStyle(Color.basicWhite)
                     
                     Spacer()
                         .frame(width: 5)
                     
                     Text("\(Int(dailyWeatherItem.maxTemp))º")
-                        .font(.system(size: 22))
-                        .fontWeight(.semibold)
+                        .pretendardFont(family: .Regular, size: 20)
+                        .foregroundStyle(Color.basicWhite)
                         .foregroundColor(.white)
                 }
             }
-            .padding()
+            .padding(.horizontal, 20)
         }
+        .frame(height: 40)
     }
 }

@@ -13,7 +13,7 @@ import Utill
 
 public struct HomeView : View {
     @Bindable var store: StoreOf<Home>
-    var locationManger = LocationManger()
+    @Environment(\.scenePhase) var scenePhase
     
     public init(store: StoreOf<Home>) {
         self.store = store
@@ -46,12 +46,29 @@ public struct HomeView : View {
                     Spacer()
                         .frame(height: 50)
                 }
-                
-                
+                .refreshable {
+                    store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                    store.send(.async(.filterDailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                    store.send(.async(.dailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                }
             }
-            
             .onAppear{
                 store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+            }
+            
+            .onChange(of: scenePhase) { oldValue, newValue in
+                switch newValue {
+                case .active:
+                    LocationManger.shared.checkAuthorizationStatus()
+                    store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                case .inactive:
+                    LocationManger.shared.checkAuthorizationStatus()
+                    store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                case .background:
+                    LocationManger.shared.checkAuthorizationStatus()
+                @unknown default:
+                    break
+                }
             }
         }
     }

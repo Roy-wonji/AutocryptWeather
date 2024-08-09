@@ -50,7 +50,7 @@ public struct Home {
     public enum AsyncAction: Equatable {
         case fetchWeatherResponse(Result<WeatherResponseModel, CustomError>)
         case fetchWeather(latitude: Double, longitude: Double)
-        case filterDailyWeather(latitude: Double, longitude: Double, date: Date)
+        case filterDailyWeather(latitude: Double, longitude: Double)
         case filterDaileyWeatherResponse(Result<[HourlyWeatherItem], CustomError>)
         case dailyWeatherResponse(Result<[DailyWeatherItem], CustomError>)
         case dailyWeather(latitude: Double, longitude: Double)
@@ -125,7 +125,8 @@ public struct Home {
                     
                     return .none
                     
-                case .filterDailyWeather(let latitude, let longitude, let date):
+                case .filterDailyWeather(let latitude, let longitude):
+                     let hourlyWeatherItems: [(timeText: String, weatherIcon: String, temperature: String)]
                     return .run { @MainActor send in
                         let fetchWeatherResult = await Result {
                             try await weatherUseCase.fetchWeather(latitude: latitude, longitude: longitude)
@@ -208,63 +209,88 @@ public struct Home {
         return currentDate < target && target < threeDaysLaterDate
     }
 
-    func changeFullDateToHourString(
-        from fullDate: String
-    ) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+    func changeFullDateToHourString(from dt: Int) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(dt))
+        let calendar = Calendar.current
         
-        if let date = dateFormatter.date(from: fullDate) {
-            let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = Calendar.current.component(.hour, from: date) < 12
-            ? "오전 h시"
-            : "오후 h시"
-            
-            return timeFormatter.string(from: date)
+        // Get the current date rounded to the nearest hour
+        var currentDate = Date()
+        if let roundedCurrentDate = calendar.date(bySetting: .minute, value: 0, of: currentDate) {
+            currentDate = roundedCurrentDate
         }
         
-        return ""
+        // Check if the date is equal to the current date
+        if calendar.isDate(date, equalTo: currentDate, toGranularity: .hour) {
+            return "현재"
+        }
+        
+        // Determine whether the time is AM or PM
+        let hour = calendar.component(.hour, from: date)
+        let period = hour < 12 ? "오전" : "오후"
+        
+        // Format the hour string
+        let hourString: String
+        if hour == 0 || hour == 12 {
+            hourString = "12시"
+        } else {
+            hourString = "\(hour % 12)시"
+        }
+        
+        return "\(period) \(hourString)"
     }
 
-    func mapToHourlyWeatherItems(_ weatherResponse: WeatherResponseModel, hoursInterval: Int, totalHours: Int) -> [HourlyWeatherItem] {
+
+    func mapToHourlyWeatherItems(_ weatherResponse: WeatherResponseModel, hoursInterval: Int = 3, totalHours: Int = 48) -> [HourlyWeatherItem] {
         let calendar = Calendar.current
-        let currentDate = Date()
-        let startDate = calendar.date(bySetting: .minute, value: 0, of: currentDate) ?? currentDate
-        guard let endDate = calendar.date(byAdding: .hour, value: totalHours, to: startDate) else {
-            return []
+        
+        // Truncate the current time to the nearest hour
+        var currentDate = Date()
+        if let truncatedCurrentDate = calendar.date(bySettingHour: calendar.component(.hour, from: currentDate), minute: 0, second: 0, of: currentDate) {
+            currentDate = truncatedCurrentDate
         }
-
+        
+        let startDate = currentDate
+        let endDate = calendar.date(byAdding: .hour, value: totalHours, to: startDate) ?? Date()
+        
         var hourlyWeatherItems = [HourlyWeatherItem]()
-
+        
         if let hourlyData = weatherResponse.hourly {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-            dateFormatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC로 설정
-
+            dateFormatter.timeZone = TimeZone(secondsFromGMT: weatherResponse.timezoneOffset ?? 0) // Use the offset from the response
+            
             for weatherData in hourlyData {
-                let weatherDate = Date(timeIntervalSince1970: TimeInterval(weatherData.dt ?? .zero))
-                let fullDate = dateFormatter.string(from: weatherDate)
-                if !compareTime(from: fullDate) { continue }
-
-                let hourDifference = calendar.dateComponents([.hour], from: startDate, to: weatherDate).hour ?? 0
-                if hourDifference % hoursInterval != 0 && !calendar.isDate(weatherDate, equalTo: currentDate, toGranularity: .hour) { continue }
-
-                let timeText = calendar.isDate(weatherDate, equalTo: currentDate, toGranularity: .hour) ? "현재" : changeFullDateToHourString(from: fullDate)
-                let hourlyWeatherItem = HourlyWeatherItem(
-                    id: UUID(),
-                    timeText: timeText,
-                    weatherImageName: weatherData.weather?.first?.icon ?? "default_weather_image",
-                    tempText: String(format: "%.1fº", weatherData.temp ?? .zero)
-                )
-                hourlyWeatherItems.append(hourlyWeatherItem)
+                guard let weatherTimestamp = weatherData.dt else { continue }
+                
+                let weatherDate = Date(timeIntervalSince1970: TimeInterval(weatherTimestamp))
+                
+                // Ensure that the weatherDate is within the range [startDate, endDate]
+                if weatherDate >= startDate && weatherDate <= endDate {
+                    let hourDifference = calendar.dateComponents([.hour], from: startDate, to: weatherDate).hour ?? 0
+                    
+                    // Only add items that match the 3-hour interval or the current time
+                    if hourDifference % hoursInterval == 0 || calendar.isDate(weatherDate, equalTo: currentDate, toGranularity: .hour) {
+                        let timeText = calendar.isDate(weatherDate, equalTo: currentDate, toGranularity: .hour)
+                            ? "현재"
+                            : changeFullDateToHourString(from: weatherTimestamp)
+                        
+                        let hourlyWeatherItem = HourlyWeatherItem(
+                            id: UUID(),
+                            timeText: timeText,
+                            weatherImageName: weatherData.weather?.first?.icon ?? "default_weather_image",
+                            tempText: String(format: "%.1fº", weatherData.temp ?? .zero)
+                        )
+                        hourlyWeatherItems.append(hourlyWeatherItem)
+                    }
+                }
             }
         }
-
+        
         return hourlyWeatherItems
     }
 
 
-    
+
     
     func processDailyWeatherData(data: [Daily]) -> [DailyWeatherItem] {
         var lowestTemp: Double = Double.greatestFiniteMagnitude
@@ -296,9 +322,7 @@ public struct Home {
                 weatherImageName: weatherImageName, // weatherImageName 그대로 사용
                 currentTemp: currentTemp,
                 minTemp: minTemp,
-                maxTemp: maxTemp,
-                lowestTemp: lowestTemp,
-                highestTemp: highestTemp
+                maxTemp: maxTemp
             )
             dailyWeatherViewItem.append(dailyWeatherItem)
         }
@@ -321,7 +345,6 @@ public struct Home {
         return false
     }
 
-    
     func changeFullDateToDayString(
             from fullDate: String
         ) -> String {
@@ -331,6 +354,7 @@ public struct Home {
             if let date = dateFormatter.date(from: fullDate) {
                 let dayFormatter = DateFormatter()
                 dayFormatter.dateFormat = "EEEEE"
+                dayFormatter.locale = Locale(identifier: "ko_KR")
                 return dayFormatter.string(from: date)
             }
             
