@@ -36,6 +36,7 @@ public struct Weather {
         var showCity: Bool = false
         var longitude: Double = 0
         var latitude: Double = 0
+        var mainWeatherLoading: Bool = true
         
     }
     
@@ -126,7 +127,7 @@ public struct Weather {
                     case .success(let weatherResponseModel):
                         state.weatherModel = weatherResponseModel
                         Log.debug("날씨 파실 성공")
-                        
+                        state.mainWeatherLoading = false
                     case .failure(let error):
                         Log.error("날씨 데이터 오류'", error.localizedDescription)
                     }

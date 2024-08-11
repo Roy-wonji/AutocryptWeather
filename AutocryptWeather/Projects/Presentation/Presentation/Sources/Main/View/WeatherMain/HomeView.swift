@@ -35,61 +35,74 @@ public struct WeatherView : View {
                 .resizable()
                 .ignoresSafeArea()
             
-            VStack {
+            if store.mainWeatherLoading {
                 Spacer()
-                    .frame(height: 20)
                 
-                searchBar()
+                ProgressView()
+                    .progressViewStyle(.circular)
                 
-                ScrollView(showsIndicators: false) {
-                    if !store.searchText.isEmpty ||  store.showCity {
-                        cityLists()
-                            .onAppear {
-                                store.send(.async(.cityListLoad))
-                            }
-                            .onChange(of: store.searchText) { oldValue, newValue in
-                                if newValue.isEmpty {
+                
+                Spacer()
+            } else {
+                VStack {
+                    Spacer()
+                        .frame(height: 20)
+                    
+                    searchBar()
+                    
+                    ScrollView(showsIndicators: false) {
+                        if !store.searchText.isEmpty ||  store.showCity {
+                            cityLists()
+                                .onAppear {
                                     store.send(.async(.cityListLoad))
-                                } else {
-                                    store.send(.async(.searchCity(searchText: newValue)))
                                 }
-                            }
-                           
-                    } else if store.showCity == false {
-                        weatherView()
+                                .onChange(of: store.searchText) { oldValue, newValue in
+                                    if newValue.isEmpty {
+                                        store.send(.async(.cityListLoad))
+                                    } else {
+                                        store.send(.async(.searchCity(searchText: newValue)))
+                                    }
+                                }
+                               
+                        } else if store.showCity == false {
+                            weatherView()
+                            
+                        }
                         
                     }
+                    .refreshable {
+                        refreshWeatherData()
+                    }
+                }
+                .onChange(of: store.longitude) { newValue in
+                    store.longitude = newValue
                     
+                    checkAndFetchWeathers()
                 }
-                .refreshable {
-                    refreshWeatherData()
+                .onChange(of: store.latitude) { newValue in
+                    store.latitude = newValue
+                    
+                    checkAndFetchWeathers()
                 }
-            }
-            .onChange(of: store.longitude) { newValue in
-                store.longitude = newValue
                 
-                checkAndFetchWeathers()
-            }
-            .onChange(of: store.latitude) { newValue in
-                store.latitude = newValue
-                
-                checkAndFetchWeathers()
+                .onChange(of: scenePhase) { oldValue, newValue in
+                    switch newValue {
+                    case .active:
+                        LocationManger.shared.checkAuthorizationStatus()
+                        store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                    case .inactive:
+                        LocationManger.shared.checkAuthorizationStatus()
+                        store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                    case .background:
+                        LocationManger.shared.checkAuthorizationStatus()
+                    @unknown default:
+                        break
+                    }
+                }
             }
             
-            .onChange(of: scenePhase) { oldValue, newValue in
-                switch newValue {
-                case .active:
-                    LocationManger.shared.checkAuthorizationStatus()
-                    store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
-                case .inactive:
-                    LocationManger.shared.checkAuthorizationStatus()
-                    store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
-                case .background:
-                    LocationManger.shared.checkAuthorizationStatus()
-                @unknown default:
-                    break
-                }
-            }
+            
+           
         }
     }
 }
