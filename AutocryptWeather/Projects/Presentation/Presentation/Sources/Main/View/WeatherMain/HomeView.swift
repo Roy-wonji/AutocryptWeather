@@ -18,6 +18,7 @@ import Utill
 public struct WeatherView : View {
     @Bindable var store: StoreOf<Weather>
     @Environment(\.scenePhase) var scenePhase
+    var location = LocationManger()
     @State private var cancellable: AnyCancellable?
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude:  LocationManger.shared.manager.location?.coordinate.latitude ?? .zero, longitude:  LocationManger.shared.manager.location?.coordinate.longitude ?? .zero),
@@ -88,13 +89,13 @@ public struct WeatherView : View {
                 .onChange(of: scenePhase) { oldValue, newValue in
                     switch newValue {
                     case .active:
-                        LocationManger.shared.checkAuthorizationStatus()
+                        store.locationMaaner.checkAuthorizationStatus()
                         store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
                     case .inactive:
-                        LocationManger.shared.checkAuthorizationStatus()
+                        store.locationMaaner.checkAuthorizationStatus()
                         store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
                     case .background:
-                        LocationManger.shared.checkAuthorizationStatus()
+                        store.locationMaaner.checkAuthorizationStatus()
                     @unknown default:
                         break
                     }
@@ -127,9 +128,7 @@ extension WeatherView {
             Spacer()
                 .frame(height: 20)
             
-            WeatherMapView(region: $region, latitude: $store.latitude, longitude: $store.longitude)
-            
-            
+            WeatherMapView(region: $region, latitude: $store.latitude, longitude: $store.longitude, store: store)
             
             Spacer()
                 .frame(height: 20)
@@ -413,16 +412,16 @@ extension WeatherView {
        private func refreshWeatherData() {
            if store.latitude == .zero && store.longitude == .zero {
                store.send(.async(.fetchWeather(
-                latitude: LocationManger.shared.manager.location?.coordinate.latitude ?? .zero,
-                longitude: LocationManger.shared.manager.location?.coordinate.longitude ?? .zero
+                latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero,
+                longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero
                )))
                store.send(.async(.filterDailyWeather(
-                latitude: LocationManger.shared.manager.location?.coordinate.latitude ?? .zero,
-                longitude: LocationManger.shared.manager.location?.coordinate.longitude ?? .zero
+                latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero,
+                longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero
                )))
                store.send(.async(.dailyWeather(
-                latitude: LocationManger.shared.manager.location?.coordinate.latitude ?? .zero,
-                longitude: LocationManger.shared.manager.location?.coordinate.longitude ?? .zero
+                latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero,
+                longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero
                )))
            } else {
                store.send(.async(.fetchWeather(

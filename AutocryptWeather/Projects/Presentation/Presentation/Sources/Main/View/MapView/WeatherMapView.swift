@@ -12,6 +12,7 @@ import DesignSystem
 import MapKit
 import Model
 
+
 public struct WeatherMapView: View {
     @Binding var region: MKCoordinateRegion
     @State private var userLocation: IdentifiableLocation
@@ -19,29 +20,33 @@ public struct WeatherMapView: View {
     @Binding var longitude: Double
     @Namespace private var namespace
     
-    
     @State private var coordinate: CLLocationCoordinate2D
+    @Bindable var store: StoreOf<Weather>
     
+
     init(
         region: Binding<MKCoordinateRegion>,
         latitude: Binding<Double>,
-        longitude: Binding<Double>
+        longitude: Binding<Double>,
+        store: StoreOf<Weather>
+        
     ) {
-            self._region = region
-            self._latitude = latitude
-            self._longitude = longitude
-            
-            
-            // Initialize the coordinate based on the provided latitude/longitude or fallback to the user's location
-            let initialCoordinate: CLLocationCoordinate2D
-            if latitude.wrappedValue != 0.0 && longitude.wrappedValue != 0.0 {
-                initialCoordinate = CLLocationCoordinate2D(latitude: latitude.wrappedValue, longitude: longitude.wrappedValue)
-            } else {
-                initialCoordinate = region.wrappedValue.center
-            }
-            self._coordinate = State(initialValue: initialCoordinate)
-            self._userLocation = State(initialValue: IdentifiableLocation(coordinate: initialCoordinate))
+        self._region = region
+        self._latitude = latitude
+        self._longitude = longitude
+        
+        let initialCoordinate: CLLocationCoordinate2D
+        if latitude.wrappedValue != 0.0 && longitude.wrappedValue != 0.0 {
+            initialCoordinate = CLLocationCoordinate2D(latitude: latitude.wrappedValue, longitude: longitude.wrappedValue)
+        } else if let location = store.locationMaaner.manager.location {
+            initialCoordinate = location.coordinate
+        } else {
+            initialCoordinate = region.wrappedValue.center
         }
+        self._coordinate = State(initialValue: initialCoordinate)
+        self._userLocation = State(initialValue: IdentifiableLocation(coordinate: initialCoordinate))
+        self.store = store
+    }
     
     public var body: some View {
         ZStack {
@@ -75,12 +80,9 @@ public struct WeatherMapView: View {
                             .padding(.horizontal, 40)
                             .overlay(
                                 Map(coordinateRegion: $region, showsUserLocation: false, annotationItems: [userLocation]) { location in
-                                    
-                                    MapMarker(coordinate: coordinate)
-                                        
+                                    MapMarker(coordinate: location.coordinate)
                                 }
                                     .mapScope(namespace)
-                                    
                                     .frame(height: UIScreen.screenHeight * 0.3)
                                     .padding(.horizontal, 40)
                                     .colorScheme(.dark)
@@ -90,6 +92,9 @@ public struct WeatherMapView: View {
                         Spacer().frame(height: 20)
                     }
                 )
+        }
+        .onAppear {
+            updateCoordinate()
         }
         .onChange(of: latitude) { _ in updateCoordinate() }
         .onChange(of: longitude) { _ in updateCoordinate() }
@@ -101,13 +106,19 @@ public struct WeatherMapView: View {
                 let newCoordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
                 coordinate = newCoordinate
                 userLocation = IdentifiableLocation(coordinate: newCoordinate)
-                withAnimation {
-                    region.center = newCoordinate
-                    region.span = MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1) 
-                }
+                region.center = newCoordinate
+                region.span = MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
             }
-        } 
-        
+        } else {
+            withAnimation {
+                store.locationMaaner.checkAuthorizationStatus()
+                let newCoordinate = CLLocationCoordinate2D(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)
+                coordinate = newCoordinate
+                userLocation = IdentifiableLocation(coordinate: newCoordinate)
+                region.center = newCoordinate
+                region.span = MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+            }
+        }
     }
 }
 
