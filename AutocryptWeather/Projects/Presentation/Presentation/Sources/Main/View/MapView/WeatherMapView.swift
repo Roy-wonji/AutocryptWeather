@@ -38,7 +38,7 @@ public struct WeatherMapView: View {
         let initialCoordinate: CLLocationCoordinate2D
         if latitude.wrappedValue != 0.0 && longitude.wrappedValue != 0.0 {
             initialCoordinate = CLLocationCoordinate2D(latitude: latitude.wrappedValue, longitude: longitude.wrappedValue)
-        } else if let location = store.locationMaaner.manager.location {
+        } else if let location = LocationManger.shared.manager.location {
             initialCoordinate = location.coordinate
         } else {
             initialCoordinate = region.wrappedValue.center
