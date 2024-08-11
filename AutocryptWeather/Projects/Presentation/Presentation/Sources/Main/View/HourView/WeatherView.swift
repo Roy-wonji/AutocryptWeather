@@ -10,13 +10,13 @@ import ComposableArchitecture
 import DesignSystem
 
 public struct HourlyWeatherView: View {
-    @Bindable var store: StoreOf<Home>
+    @Bindable var store: StoreOf<Weather>
     @Binding var latitude: Double
     @Binding var longitude: Double
 
     
     public init(
-            store: StoreOf<Home>,
+            store: StoreOf<Weather>,
             latitude: Binding<Double>,
             longitude: Binding<Double>)
         {

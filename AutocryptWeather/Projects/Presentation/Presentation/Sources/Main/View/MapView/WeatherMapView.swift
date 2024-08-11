@@ -22,7 +22,11 @@ public struct WeatherMapView: View {
     
     @State private var coordinate: CLLocationCoordinate2D
     
-    init(region: Binding<MKCoordinateRegion>, latitude: Binding<Double>, longitude: Binding<Double>) {
+    init(
+        region: Binding<MKCoordinateRegion>,
+        latitude: Binding<Double>,
+        longitude: Binding<Double>
+    ) {
             self._region = region
             self._latitude = latitude
             self._longitude = longitude

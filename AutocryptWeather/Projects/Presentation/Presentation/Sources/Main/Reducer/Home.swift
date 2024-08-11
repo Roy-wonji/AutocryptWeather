@@ -16,7 +16,7 @@ import Foundations
 import Combine
 
 @Reducer
-public struct Home {
+public struct Weather {
     public init() {}
     
     @ObservableState

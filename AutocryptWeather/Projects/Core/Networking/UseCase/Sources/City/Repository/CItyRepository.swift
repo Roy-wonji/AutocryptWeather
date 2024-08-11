@@ -22,7 +22,7 @@ public class CityRepository: CityRepositoryProtocol {
                 let data = try Data(contentsOf: url)
                 return data
             } catch {
-                print("Error loading local JSON data: \(error)")
+                Log.error("에러 JSON 파싱 data: ", error)
             }
         }
         return nil
@@ -46,7 +46,7 @@ public class CityRepository: CityRepositoryProtocol {
                 } else {
                     if startIndex < endIndex {
                         let paginatedCities = Array(decodedCities[startIndex..<endIndex])
-                        print("Successfully decoded and paginated JSON into CityModels.")
+                        Log.debug("파싱 성공 ", paginatedCities)
                         return paginatedCities
                     } else {
                         return [] // No more data to load
@@ -55,7 +55,7 @@ public class CityRepository: CityRepositoryProtocol {
                 
                 
             } catch {
-                print("Error decoding JSON: \(error)")
+                Log.error("디코딩 애러 JSON:", error)
                 throw error
             }
     }

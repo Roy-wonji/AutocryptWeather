@@ -15,8 +15,8 @@ import DesignSystem
 import Utill
 
 
-public struct HomeView : View {
-    @Bindable var store: StoreOf<Home>
+public struct WeatherView : View {
+    @Bindable var store: StoreOf<Weather>
     @Environment(\.scenePhase) var scenePhase
     @State private var cancellable: AnyCancellable?
     @State private var region = MKCoordinateRegion(
@@ -25,7 +25,7 @@ public struct HomeView : View {
     )
     
     
-    public init(store: StoreOf<Home>) {
+    public init(store: StoreOf<Weather>) {
         self.store = store
     }
     
@@ -94,7 +94,7 @@ public struct HomeView : View {
     }
 }
 
-extension HomeView {
+extension WeatherView {
     
     @ViewBuilder
     private func weatherView() -> some View {
@@ -132,7 +132,7 @@ extension HomeView {
             .padding(.horizontal, 20)
             
             HStack {
-                homeTempletView(title: "바람 속도", detailData: "\(store.weatherModel?.current?.windSpeed ?? .zero)m/s", isWindSpeed: true, windSpeed: "\(store.weatherModel?.current?.windGust ?? .zero)")
+                homeTempletView(title: "바람 속도", detailData: "\(store.weatherModel?.current?.windSpeed ?? .zero) m/s", isWindSpeed: true, windSpeed: "\(store.weatherModel?.current?.windGust ?? .zero)")
                 
                 Spacer()
                 

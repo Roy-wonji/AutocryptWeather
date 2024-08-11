@@ -7,8 +7,8 @@ import Model
 @main
 struct AutocryptWeatherApp: App {
     var cityModel: CityModels?
-    var store = Store(initialState: Home.State()) {
-        Home()
+    var store = Store(initialState: Weather.State()) {
+        Weather()
             ._printChanges()
             ._printChanges(.actionLabels)
     }
@@ -16,13 +16,11 @@ struct AutocryptWeatherApp: App {
     public init() {
         registerDependencies()
         LocationManger.shared.checkAuthorizationStatus()
-
-        
     }
     
     var body: some Scene {
         WindowGroup {
-            HomeView(store: store)
+            WeatherView(store: store)
                 .onAppear {
                     store.send(.async(.fetchWeather(
                         latitude: LocationManger.currentLocation?.latitude ?? .zero,
