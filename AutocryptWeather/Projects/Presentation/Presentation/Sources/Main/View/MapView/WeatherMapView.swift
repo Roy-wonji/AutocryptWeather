@@ -107,7 +107,7 @@ public struct WeatherMapView: View {
                 coordinate = newCoordinate
                 userLocation = IdentifiableLocation(coordinate: newCoordinate)
                 region.center = newCoordinate
-                region.span = MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+                region.span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
             }
         } else {
             withAnimation {
@@ -116,7 +116,7 @@ public struct WeatherMapView: View {
                 coordinate = newCoordinate
                 userLocation = IdentifiableLocation(coordinate: newCoordinate)
                 region.center = newCoordinate
-                region.span = MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+                region.span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
             }
         }
     }
