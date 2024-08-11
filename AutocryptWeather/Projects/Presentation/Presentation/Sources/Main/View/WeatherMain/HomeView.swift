@@ -75,6 +75,9 @@ public struct WeatherView : View {
                         refreshWeatherData()
                     }
                 }
+                .onAppear {
+                    store.locationMaaner.checkAuthorizationStatus()
+                }
                 .onChange(of: store.longitude) { newValue in
                     store.longitude = newValue
                     
