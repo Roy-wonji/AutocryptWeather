@@ -25,9 +25,7 @@ public final class AppDIContainer {
     // MARK: - Use Cases
     private func registerUseCases() async {
         await registerWeatherUseCase()
-//        await registerSignUpUseCase()
-
-//        await registerQrCodeUseCase()
+        await registerCityUseCase()
     }
 
     private func registerWeatherUseCase() async {
@@ -40,20 +38,21 @@ public final class AppDIContainer {
         }
     }
     
-//    private func registerSignUpUseCase() async {
-//        await diContainer.register(SignUpUseCaseProtocol.self) {
-//            guard let repository = self.diContainer.resolve(SignUpRepositoryProtocol.self) else {
-//                assertionFailure("SignUpRepositoryProtocol must be registered before registering SignUpUseCaseProtocol")
-//                return SignUpUseCase(repository: DefaultSignUpRepository())
-//            }
-//            return SignUpUseCase(repository: repository)
-//        }
-//    }
-
+    private func registerCityUseCase() async {
+        await diContainer.register(CityUseCaseProtocol.self) {
+            guard let repository = self.diContainer.resolve(CityRepositoryProtocol.self) else {
+                assertionFailure("AuthRepositoryProtocol must be registered before registering AuthUseCaseProtocol")
+                return CityUseCase(repository: DefaultCityRepository())
+            }
+            return CityUseCase(repository: repository)
+        }
+    }
+    
 
     // MARK: - Repositories Registration
     private func registerRepositories() async {
         await registerWeatherRepositories()
+        await registerCityRepositories()
 
     }
 
@@ -62,12 +61,12 @@ public final class AppDIContainer {
             WeatherRepository()
         }
     }
-//    
-//    private func registerSignUpRepositories() async {
-//        await diContainer.register(SignUpRepositoryProtocol.self) {
-//            SingUpRepository()
-//        }
-//    }
+
     
+    private func registerCityRepositories() async {
+        await diContainer.register(CityRepositoryProtocol.self) {
+            CityRepository()
+        }
+    }    
 }
 

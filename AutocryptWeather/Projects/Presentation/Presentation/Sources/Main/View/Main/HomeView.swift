@@ -6,19 +6,24 @@
 //
 
 import SwiftUI
+import MapKit
+import Combine
 
 import ComposableArchitecture
 import DesignSystem
+
 import Utill
-import MapKit
+
 
 public struct HomeView : View {
     @Bindable var store: StoreOf<Home>
     @Environment(\.scenePhase) var scenePhase
+    @State private var cancellable: AnyCancellable?
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude:  LocationManger.shared.manager.location?.coordinate.latitude ?? .zero, longitude:  LocationManger.shared.manager.location?.coordinate.longitude ?? .zero),
         span: MKCoordinateSpan(latitudeDelta: 5  , longitudeDelta: 5)
     )
+    
     
     public init(store: StoreOf<Home>) {
         self.store = store
@@ -31,61 +36,44 @@ public struct HomeView : View {
                 .ignoresSafeArea()
             
             VStack {
-                ScrollView {
-                    Spacer()
-                        .frame(height: 20)
-                    
-                    mainHeaderView()
-                    
-                    Spacer()
-                        .frame(height: 20)
-
-                    HourlyWeatherView(store: store)
-                    
-                    Spacer()
-                        .frame(height: 20)
-                    
-                    DailyWeatherView(store: store)
-                    
-                    Spacer()
-                        .frame(height: 20)
-                    
-                    WeatherMapView(store: store, region: $region, rainText: (store.weatherModel?.daily?.first?.pop ?? .zero).formatToOneDecimalPlace((store.weatherModel?.daily?.first?.pop ?? .zero)))
-                    
-                    Spacer()
-                        .frame(height: 20)
-                    
-                    HStack {
-                        homeTempletView(title: "습도", detailData: "\(store.weatherModel?.current?.humidity ?? .zero)%", isWindSpeed: false, windSpeed: "")
-                        
-                        Spacer()
-                        
-                        homeTempletView(title: "구름", detailData:  "\(store.weatherModel?.current?.clouds ?? .zero)%"  , isWindSpeed: false, windSpeed: "")
+                Spacer()
+                    .frame(height: 20)
+                
+                searchBar()
+                
+                ScrollView(showsIndicators: false) {
+                    if !store.searchText.isEmpty ||  store.showCity {
+                        cityLists()
+                            .onAppear {
+                                store.send(.async(.cityListLoad))
+                            }
+                            .onChange(of: store.searchText) { oldValue, newValue in
+                                if newValue.isEmpty {
+                                    store.send(.async(.cityListLoad))
+                                } else {
+                                    store.send(.async(.searchCity(searchText: newValue)))
+                                }
+                            }
+                           
+                    } else if store.showCity == false {
+                        weatherView()
                         
                     }
-                    .padding(.horizontal, 20)
                     
-                    HStack {
-                        homeTempletView(title: "바람 속도", detailData: "\(store.weatherModel?.current?.windSpeed ?? .zero)%", isWindSpeed: true, windSpeed: "\(store.weatherModel?.current?.windGust ?? .zero)%")
-                        
-                        Spacer()
-                        
-                        homeTempletView(title: "기압", detailData:  "\(store.weatherModel?.current?.pressure ?? .zero) hPa"  , isWindSpeed: false, windSpeed: "")
-                        
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    Spacer()
-                        .frame(height: 50)
                 }
                 .refreshable {
-                    store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
-                    store.send(.async(.filterDailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
-                    store.send(.async(.dailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                    refreshWeatherData()
                 }
             }
-            .onAppear{
-                store.send(.async(.fetchWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+            .onChange(of: store.longitude) { newValue in
+                store.longitude = newValue
+                
+                checkAndFetchWeathers()
+            }
+            .onChange(of: store.latitude) { newValue in
+                store.latitude = newValue
+                
+                checkAndFetchWeathers()
             }
             
             .onChange(of: scenePhase) { oldValue, newValue in
@@ -109,8 +97,59 @@ public struct HomeView : View {
 extension HomeView {
     
     @ViewBuilder
+    private func weatherView() -> some View {
+        LazyVStack {
+            Spacer()
+                .frame(height: 20)
+            
+            mainHeaderView()
+           
+            HourlyWeatherView(store: store, latitude: $store.latitude, longitude: $store.longitude)
+            
+            Spacer()
+                .frame(height: 20)
+            
+            DailyWeatherView(store: store, latitude: $store.latitude, longitude: $store.longitude)
+            
+            Spacer()
+                .frame(height: 20)
+            
+            WeatherMapView(region: $region, latitude: $store.latitude, longitude: $store.longitude, rainText: (store.weatherModel?.daily?.first?.pop ?? .zero).formatToOneDecimalPlace((store.weatherModel?.daily?.first?.pop ?? .zero)))
+            
+            
+            
+            Spacer()
+                .frame(height: 20)
+            
+            HStack {
+                homeTempletView(title: "습도", detailData: "\(store.weatherModel?.current?.humidity ?? .zero)%", isWindSpeed: false, windSpeed: "")
+                
+                Spacer()
+                
+                homeTempletView(title: "구름", detailData:  "\(store.weatherModel?.current?.clouds ?? .zero)%"  , isWindSpeed: false, windSpeed: "")
+                
+            }
+            .padding(.horizontal, 20)
+            
+            HStack {
+                homeTempletView(title: "바람 속도", detailData: "\(store.weatherModel?.current?.windSpeed ?? .zero)m/s", isWindSpeed: true, windSpeed: "\(store.weatherModel?.current?.windGust ?? .zero)")
+                
+                Spacer()
+                
+                homeTempletView(title: "기압", detailData:  "\(store.weatherModel?.current?.pressure ?? .zero) hPa"  , isWindSpeed: false, windSpeed: "")
+                
+            }
+            .padding(.horizontal, 20)
+
+            
+            Spacer()
+                .frame(height: 50)
+        }
+    }
+    
+    @ViewBuilder
     private func mainHeaderView() -> some View {
-        VStack(alignment: .center) {
+        LazyVStack(alignment: .center) {
             Text(store.weatherModel?.timezone?.split(separator: "/").last ?? "")
                 .pretendardFont(family: .SemiBold, size: 40)
                 .foregroundStyle(Color.basicWhite)
@@ -118,11 +157,11 @@ extension HomeView {
             Text("\(Int(store.weatherModel?.current?.temp ?? .zero))º")
                 .pretendardFont(family: .SemiBold, size: 30)
                 .foregroundStyle(Color.basicWhite)
-
+            
             Text(store.weatherModel?.current?.weather?.first?.description ?? "")
                 .pretendardFont(family: .Regular, size: 25)
                 .foregroundStyle(Color.basicWhite)
-//
+            //
             HStack {
                 Text("최고:")
                     .pretendardFont(family: .Regular, size: 20)
@@ -141,7 +180,7 @@ extension HomeView {
                 Rectangle()
                     .fill(Color.basicWhite)
                     .frame(width: 1, height: 16)
-                    
+                
                 
                 Spacer()
                     .frame(width: 10)
@@ -156,7 +195,7 @@ extension HomeView {
                 Text("\(store.weatherModel?.daily?.first?.temp?.min?.formatToOneDecimalPlace(store.weatherModel?.daily?.first?.temp?.min ?? .zero) ?? "")º")
                     .foregroundStyle(Color.basicWhite)
                     .pretendardFont(family: .Regular, size: 20)
-                    
+                
             }
         }
     }
@@ -224,4 +263,167 @@ extension HomeView {
         }
     }
     
+    
+    @ViewBuilder
+    private func searchBar() -> some View {
+        VStack {
+            Spacer()
+                .frame(height: 20)
+            
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.gray300.opacity(0.5))
+                .frame(height:  48)
+                .overlay {
+                    VStack {
+                        HStack {
+                            Spacer()
+                                .frame(width: 10)
+                            
+                            Image(systemName: "magnifyingglass")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+                                .onTapGesture {
+                                    store.showCity = true
+                                }
+                            
+                            Spacer()
+                                .frame(width: 10)
+                            
+                            TextField("도시를 검색 해주세여!", text: $store.searchText)
+                                .pretendardFont(family: .SemiBold, size: 20)
+                                .foregroundStyle(store.searchText.isEmpty ? Color.gray200 : Color.basicWhite)
+                                .onSubmit {
+                                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                }
+                                .onTapGesture {
+                                    store.showCity = true
+                                }
+                               
+                            Spacer()
+                        }
+                    }
+                    .onTapGesture {
+                        store.showCity.toggle()
+                    }
+                    
+                }
+                
+        }
+        .padding(.horizontal, 20)
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+    }
+    
+    @ViewBuilder
+    private func cityLists() -> some View {
+        LazyVStack {
+            if let cityModel = store.cityModel {
+                ForEach(cityModel, id: \.id) { item in
+                    cityList(name: item.name ?? "", country: item.country ?? "", completion: {
+                        store.longitude = item.coord?.lon ?? .zero
+                        store.latitude = item.coord?.lat ?? .zero
+                        store.showCity = false
+                        store.searchText = ""
+                    })
+                    .onAppear {
+                        if item == store.cityModel?.last {
+                            store.send(.async(.cityListLoad))
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func cityList(name: String, country: String, completion: @escaping() -> Void) -> some View {
+        VStack {
+            Spacer()
+                .frame(height: 10)
+            
+            HStack {
+                Text(name)
+                    .pretendardFont(family: .SemiBold, size: 20)
+                    .foregroundColor(Color.basicWhite)
+                
+                Spacer()
+            }
+            .onTapGesture {
+                completion()
+            }
+            
+            Spacer()
+                .frame(height: 5)
+            
+            HStack {
+                Text(country)
+                    .pretendardFont(family: .SemiBold, size: 20)
+                    .foregroundColor(Color.basicWhite)
+                
+                Spacer()
+            }
+            .onTapGesture {
+                completion()
+            }
+            
+            Divider()
+                .background(.white)
+        }
+        .padding(.horizontal, 20)
+        .onTapGesture {
+            completion()
+        }
+    }
+    private func checkAndFetchWeather() {
+        if store.latitude != 0.0 && store.longitude != 0.0 {
+            cancellable?.cancel()
+            cancellable = Just(())
+                .delay(for: .milliseconds(100), scheduler: DispatchQueue.main)
+                .sink { _ in
+                    region.span =  MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+                    checkAndFetchWeathers()
+                }
+        }
+    }
+    
+    private func checkAndFetchWeathers() {
+           if store.latitude != 0.0 && store.longitude != 0.0 {
+               region.center = CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude)
+               region.span = MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+               
+               refreshWeatherData()
+           }
+       }
+       
+       private func refreshWeatherData() {
+           if store.latitude == .zero && store.longitude == .zero {
+               store.send(.async(.fetchWeather(
+                latitude: LocationManger.shared.manager.location?.coordinate.latitude ?? .zero,
+                longitude: LocationManger.shared.manager.location?.coordinate.longitude ?? .zero
+               )))
+               store.send(.async(.filterDailyWeather(
+                latitude: LocationManger.shared.manager.location?.coordinate.latitude ?? .zero,
+                longitude: LocationManger.shared.manager.location?.coordinate.longitude ?? .zero
+               )))
+               store.send(.async(.dailyWeather(
+                latitude: LocationManger.shared.manager.location?.coordinate.latitude ?? .zero,
+                longitude: LocationManger.shared.manager.location?.coordinate.longitude ?? .zero
+               )))
+           } else {
+               store.send(.async(.fetchWeather(
+                   latitude: store.latitude,
+                   longitude: store.longitude
+               )))
+               store.send(.async(.filterDailyWeather(
+                   latitude: store.latitude,
+                   longitude: store.longitude
+               )))
+               store.send(.async(.dailyWeather(
+                   latitude: store.latitude,
+                   longitude: store.longitude
+               )))
+           }
+       }
 }

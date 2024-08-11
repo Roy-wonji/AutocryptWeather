@@ -13,6 +13,7 @@ import Utill
 import UseCase
 import Model
 import Foundations
+import Combine
 
 @Reducer
 public struct Home {
@@ -24,13 +25,22 @@ public struct Home {
         public init() {}
         
         var weatherModel: WeatherResponseModel? = nil
+        var cityModel: CityModels? = nil
         var filterDayWeather: [HourlyWeatherItem] = []
         var dailyWeatherViewItem: [DailyWeatherItem] = []
         var locationMaaner = LocationManger()
-        var date: Date = Date.now
+        
+        var searchText: String = ""
+        var currentPage: Int = 0
+        var pageSize: Int = 20
+        var showCity: Bool = false
+        var longitude: Double = 0
+        var latitude: Double = 0
+        
     }
     
     public enum Action: ViewAction, BindableAction, FeatureAction {
+        
         case binding(BindingAction<State>)
         case view(View)
         case async(AsyncAction)
@@ -38,13 +48,16 @@ public struct Home {
         case navigation(NavigationAction)
     }
     
+    @Reducer(state: .equatable)
+    public enum Destination {
+        
+    }
+    
     //MARK: - ViewAction
     @CasePathable
     public enum View {
         
     }
-    
-    
     
     //MARK: - AsyncAction 비동기 처리 액션
     public enum AsyncAction: Equatable {
@@ -54,6 +67,9 @@ public struct Home {
         case filterDaileyWeatherResponse(Result<[HourlyWeatherItem], CustomError>)
         case dailyWeatherResponse(Result<[DailyWeatherItem], CustomError>)
         case dailyWeather(latitude: Double, longitude: Double)
+        case citiesLoadResponse(Result<CityModels, CustomError>)
+        case cityListLoad
+        case searchCity(searchText: String)
     }
     
     //MARK: - 앱내에서 사용하는 액션
@@ -68,14 +84,18 @@ public struct Home {
     }
     
     @Dependency(WeatherUseCase.self) var weatherUseCase
+    @Dependency(CityUseCase.self) var cityUseCase: CityUseCase
+    @Dependency(\.continuousClock) var clock
     
     public var body: some ReducerOf<Self> {
         BindingReducer()
         Reduce { state, action in
             switch action {
-            case .binding(_):
+            case .binding(\.searchText):
                 return .none
                 
+            case .binding(_):
+                return .none
                 
             case .view(let View):
                 switch View {
@@ -84,18 +104,6 @@ public struct Home {
                 
             case .async(let AsyncAction):
                 switch AsyncAction {
-                case .fetchWeatherResponse(let result):
-                    switch result {
-                    case .success(let weatherResponseModel):
-                        state.weatherModel = weatherResponseModel
-                        Log.debug("날씨 파실 성공")
-                        
-                    case .failure(let error):
-                        Log.error("날씨 데이터 오류'", error.localizedDescription)
-                    }
-                    
-                    return .none
-                    
                 case .fetchWeather(latitude: let latitude, longitude: let longitude):
                     return .run { @MainActor send in
                         let fetchWeatherResult = await Result {
@@ -113,6 +121,17 @@ public struct Home {
                         }
                     }
                     
+                case .fetchWeatherResponse(let result):
+                    switch result {
+                    case .success(let weatherResponseModel):
+                        state.weatherModel = weatherResponseModel
+                        Log.debug("날씨 파실 성공")
+                        
+                    case .failure(let error):
+                        Log.error("날씨 데이터 오류'", error.localizedDescription)
+                    }
+                    return .none
+                    
                 case .filterDaileyWeatherResponse(let result):
                     switch result {
                     case .success(let weatherResponseModel):
@@ -123,7 +142,7 @@ public struct Home {
                     return .none
                     
                 case .filterDailyWeather(let latitude, let longitude):
-                    return .run { @MainActor send in
+                    return .run {  send in
                         let fetchWeatherResult = await Result {
                             try await weatherUseCase.fetchWeather(latitude: latitude, longitude: longitude)
                         }
@@ -132,11 +151,11 @@ public struct Home {
                         case .success(let weatherResponse):
                             if let weatherResponseModel = weatherResponse {
                                 let hourlyWeatherItems =  FilterWeather.shared.mapToHourlyWeatherItems(weatherResponseModel, hoursInterval: 3, totalHours: 48)
-                                send(.async(.filterDaileyWeatherResponse(.success(hourlyWeatherItems))))
+                                await send(.async(.filterDaileyWeatherResponse(.success(hourlyWeatherItems))))
                             }
                             
                         case .failure(let error):
-                            send(.async(.filterDaileyWeatherResponse(.failure(CustomError.encodingError(error.localizedDescription)))))
+                            await send(.async(.filterDaileyWeatherResponse(.failure(CustomError.encodingError(error.localizedDescription)))))
                         }
                     }
                     
@@ -150,7 +169,7 @@ public struct Home {
                     return .none
                     
                 case .dailyWeather(latitude: let latitude, longitude: let longitude):
-                    return .run { @MainActor send in
+                    return .run {  send in
                         let fetchDailyWeatherResult = await Result {
                             try await weatherUseCase.fetchWeather(latitude: latitude, longitude: longitude)
                         }
@@ -159,15 +178,72 @@ public struct Home {
                         case .success(let weatherResponse):
                             if let weatherResponseModel = weatherResponse {
                                 let dailyWeatherItems = FilterWeather.shared.processDailyWeatherData(data: weatherResponseModel.daily ?? [])
-                                send(.async(.dailyWeatherResponse(.success(dailyWeatherItems))))
+                                await send(.async(.dailyWeatherResponse(.success(dailyWeatherItems))))
                             }
                             
                         case .failure(let error):
-                            send(.async(.dailyWeatherResponse(.failure(CustomError.encodingError(error.localizedDescription)))))
+                            await send(.async(.dailyWeatherResponse(.failure(CustomError.encodingError(error.localizedDescription)))))
                         }
                     }
-                }
                     
+                case .citiesLoadResponse(let result):
+                    switch result {
+                    case .success(let newCities):
+                        state.cityModel = newCities
+                        state.pageSize += 20
+                    case .failure(let error):
+                        Log.error("city 파실 에러", error.localizedDescription)
+                    }
+                    return .none
+                    
+                case .cityListLoad:
+                    var currentPage = state.currentPage
+                    var pageSize = state.pageSize
+                    return .run {  send in
+                        let cityData = await Result {
+                            try await cityUseCase.loadCities(page: currentPage, pageSize: pageSize, isShowAll: false)
+                        }
+                        
+                        switch cityData {
+                            
+                        case .success(let cityData):
+                            if let cityData = cityData {
+                                await send(.async(.citiesLoadResponse(.success(cityData))))
+                            }
+                        case .failure(let error):
+                            await send(.async(.citiesLoadResponse(.failure(CustomError.encodingError(error.localizedDescription)))))
+                        }
+                    }
+                    
+                case .searchCity(let searchText):
+                    var currentPage = state.currentPage
+                    var pageSize = state.pageSize
+                    
+                    return .run {  send in
+                        let cityData = await Result {
+                            try await cityUseCase.loadCities(page: currentPage, pageSize: pageSize, isShowAll: true)
+                        }
+                        
+                        switch cityData {
+                            
+                        case .success(let cityData):
+                            if let cityData = cityData {
+                                let filterCityData = cityData.filter {
+                                    $0.country?.lowercased() == searchText.lowercased() ||
+                                    $0.country?.lowercased().contains(searchText.lowercased()) == true ||
+                                    $0.name?.lowercased() == searchText.lowercased() ||
+                                    $0.name?.lowercased().contains(searchText.lowercased()) == true
+                                }
+                                await send(.async(.citiesLoadResponse(.success(filterCityData))))
+                            }
+                        case .failure(let error):
+                            await send(.async(.citiesLoadResponse(.failure(CustomError.encodingError(error.localizedDescription)))))
+                        }
+                    }
+                    
+                }
+                
+                
                 
             case .inner(let InnerAction):
                 switch InnerAction {
@@ -178,6 +254,7 @@ public struct Home {
                 switch NavigationAction {
                     
                 }
+                
             }
         }
     }

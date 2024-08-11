@@ -11,7 +11,7 @@ import Moya
 import CombineMoya
 
 // Data 타입의 확장으로 공용 디코딩 함수 정의
-extension Data {
+public extension Data {
     //MARK: -  async/ await 으로 디코딩
     func decoded<T: Decodable>(as type: T.Type) throws -> T {
             let decoder = JSONDecoder()

@@ -12,9 +12,18 @@ import DesignSystem
 
 public struct DailyWeatherView: View {
     @Bindable var store: StoreOf<Home>
+    @Binding var latitude: Double
+    @Binding var longitude: Double
     
-    public init(store: StoreOf<Home>) {
+    
+    public init(
+        store: StoreOf<Home>,
+        latitude: Binding<Double>,
+        longitude: Binding<Double>)
+    {
         self.store = store
+        self._latitude = latitude
+        self._longitude = longitude
     }
     
     public var body: some View {
@@ -24,7 +33,7 @@ public struct DailyWeatherView: View {
                 .frame(height: UIScreen.screenHeight * 0.34)
                 .padding(.horizontal, 20)
                 .overlay {
-                    VStack(alignment: .leading) {
+                    LazyVStack(alignment: .leading) {
                         HStack {
                             Image(systemName: "calendar")
                                 .resizable()
@@ -56,9 +65,14 @@ public struct DailyWeatherView: View {
                     }
                 }
                 .onAppear {
-                    store.send(.async(.dailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+                    fetchDailyWeather()
                 }
-            
+                .onChange(of: latitude) { _ in
+                    fetchDailyWeather()
+                }
+                .onChange(of: longitude) { _ in
+                    fetchDailyWeather()
+                }
         }
     }
 }
@@ -66,5 +80,15 @@ public struct DailyWeatherView: View {
 
 extension DailyWeatherView {
     
-    
+    private func fetchDailyWeather() {
+        // Ensure latitude and longitude are valid before fetching weather data
+        if latitude != 0.0 && longitude != 0.0 {
+            store.send(.async(.dailyWeather(
+                latitude: latitude,
+                longitude: longitude
+            )))
+        } else {
+            store.send(.async(.dailyWeather(latitude: store.locationMaaner.manager.location?.coordinate.latitude ?? .zero, longitude: store.locationMaaner.manager.location?.coordinate.longitude ?? .zero)))
+        }
+    }
 }

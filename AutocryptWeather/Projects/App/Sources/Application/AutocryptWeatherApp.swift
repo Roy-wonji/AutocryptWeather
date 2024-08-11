@@ -2,9 +2,11 @@ import SwiftUI
 import ComposableArchitecture
 import Presentation
 import Foundations
+import Model
 
 @main
 struct AutocryptWeatherApp: App {
+    var cityModel: CityModels?
     var store = Store(initialState: Home.State()) {
         Home()
             ._printChanges()
@@ -14,17 +16,19 @@ struct AutocryptWeatherApp: App {
     public init() {
         registerDependencies()
         LocationManger.shared.checkAuthorizationStatus()
+
+        
     }
     
     var body: some Scene {
         WindowGroup {
             HomeView(store: store)
-                .onAppear {
-                    store.send(.async(.fetchWeather(
-                        latitude: LocationManger.currentLocation?.latitude ?? .zero,
-                        longitude: LocationManger.currentLocation?.longitude ?? .zero
-                    )))
-                }
+//                .onAppear {
+//                    store.send(.async(.fetchWeather(
+//                        latitude: LocationManger.currentLocation?.latitude ?? .zero,
+//                        longitude: LocationManger.currentLocation?.longitude ?? .zero
+//                    )))
+//                }
             
         }
     }
@@ -37,4 +41,5 @@ extension AutocryptWeatherApp {
             await AppDIContainer.shared.registerDependencies()
         }
     }
+    
 }
