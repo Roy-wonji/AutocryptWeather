@@ -114,7 +114,7 @@ extension HomeView {
             Spacer()
                 .frame(height: 20)
             
-            WeatherMapView(region: $region, latitude: $store.latitude, longitude: $store.longitude, rainText: (store.weatherModel?.daily?.first?.pop ?? .zero).formatToOneDecimalPlace((store.weatherModel?.daily?.first?.pop ?? .zero)))
+            WeatherMapView(region: $region, latitude: $store.latitude, longitude: $store.longitude)
             
             
             

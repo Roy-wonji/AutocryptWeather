@@ -23,13 +23,12 @@ struct AutocryptWeatherApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView(store: store)
-//                .onAppear {
-//                    store.send(.async(.fetchWeather(
-//                        latitude: LocationManger.currentLocation?.latitude ?? .zero,
-//                        longitude: LocationManger.currentLocation?.longitude ?? .zero
-//                    )))
-//                }
-            
+                .onAppear {
+                    store.send(.async(.fetchWeather(
+                        latitude: LocationManger.currentLocation?.latitude ?? .zero,
+                        longitude: LocationManger.currentLocation?.longitude ?? .zero
+                    )))
+                }
         }
     }
 }

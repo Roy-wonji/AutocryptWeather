@@ -17,15 +17,16 @@ public struct WeatherMapView: View {
     @State private var userLocation: IdentifiableLocation
     @Binding var latitude: Double
     @Binding var longitude: Double
-    var rainText: String
+    @Namespace private var namespace
+    
     
     @State private var coordinate: CLLocationCoordinate2D
     
-    init(region: Binding<MKCoordinateRegion>, latitude: Binding<Double>, longitude: Binding<Double>, rainText: String) {
+    init(region: Binding<MKCoordinateRegion>, latitude: Binding<Double>, longitude: Binding<Double>) {
             self._region = region
             self._latitude = latitude
             self._longitude = longitude
-            self.rainText = rainText
+            
             
             // Initialize the coordinate based on the provided latitude/longitude or fallback to the user's location
             let initialCoordinate: CLLocationCoordinate2D
@@ -71,22 +72,11 @@ public struct WeatherMapView: View {
                             .overlay(
                                 Map(coordinateRegion: $region, showsUserLocation: false, annotationItems: [userLocation]) { location in
                                     
-                                    MapAnnotation(coordinate: coordinate) {
-                                        Circle()
-                                            .fill(Color.basicWhite)
-                                            .frame(width: 25, height: 25)
-                                            .overlay(
-                                                Circle()
-                                                    .fill(Color.blue)
-                                                    .frame(width: 18, height: 18)
-                                                    .overlay(
-                                                        Text(rainText)
-                                                            .pretendardFont(family: .Regular, size: 10)
-                                                            .foregroundColor(Color.basicWhite)
-                                                    )
-                                            )
-                                    }
+                                    MapMarker(coordinate: coordinate)
+                                        
                                 }
+                                    .mapScope(namespace)
+                                    
                                     .frame(height: UIScreen.screenHeight * 0.3)
                                     .padding(.horizontal, 40)
                                     .colorScheme(.dark)
