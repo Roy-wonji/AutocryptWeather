@@ -1,4 +1,13 @@
 [
+    {
+        "id": 9999999,
+        "name": "Seoul",
+        "country": "KR",
+        "coord": {
+          "lon": 126.9780,
+          "lat": 37.5665
+        }
+    },
   {
     "id": 707860,
     "name": "Hurzuf",
