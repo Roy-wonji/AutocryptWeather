@@ -52,7 +52,7 @@ public struct WeatherView : View {
                     searchBar()
                     
                     ScrollView(showsIndicators: false) {
-                        if !store.searchText.isEmpty ||  store.showCity {
+                        if !store.searchText.isEmpty || store.showCity {
                             cityLists()
                                 .onAppear {
                                     store.send(.async(.cityListLoad))
@@ -67,7 +67,8 @@ public struct WeatherView : View {
                                
                         } else if store.showCity == false {
                             weatherView()
-                            
+                        } else {
+                            weatherView()
                         }
                         
                     }
@@ -299,7 +300,7 @@ extension WeatherView {
                                 .scaledToFit()
                                 .frame(width: 20, height: 20)
                                 .onTapGesture {
-                                    store.showCity = true
+                                    store.showCity.toggle()
                                 }
                             
                             Spacer()
@@ -312,7 +313,8 @@ extension WeatherView {
                                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                                 }
                                 .onTapGesture {
-                                    store.showCity = true
+                                    store.showCity.toggle()
+                                    
                                 }
                                
                             Spacer()
@@ -328,6 +330,7 @@ extension WeatherView {
         .padding(.horizontal, 20)
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            store.showCity.toggle()
         }
     }
     
@@ -341,6 +344,8 @@ extension WeatherView {
                         store.latitude = item.coord?.lat ?? .zero
                         store.showCity = false
                         store.searchText = ""
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+
                     })
                     .onAppear {
                         if item == store.cityModel?.last {
